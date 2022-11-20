@@ -7,7 +7,14 @@ from reaml.preprocessing import setup_train_test_idx, train_test_split
 ROOT_DIR = os.getcwd()
 
 
-def insertAdditionalFeatures1(df_classes, df_edges, df_features):
+def merge_data_frames(dataframe1, dataframe2, left_column_name, right_node_column_name, right_additional_column_name):
+    dataframe2 = pd.merge(dataframe2, dataframe1[[right_node_column_name, right_additional_column_name]],
+                          left_on=left_column_name, right_on=right_node_column_name, how='left')
+    dataframe2[right_additional_column_name] = dataframe2[right_additional_column_name].fillna(0)
+    return dataframe2.drop(right_node_column_name, axis=1)
+
+
+def insert_illicit_neighbours_feature(df_classes, df_edges, df_features):
     dict_classes = dict(zip(df_classes.txId, df_classes['class']))
     dict_edges = dict(zip(df_edges.txId1, df_edges.txId2))
 
@@ -25,13 +32,10 @@ def insertAdditionalFeatures1(df_classes, df_edges, df_features):
         illicit_neighbours[source_node] += 1
 
     df_illicit_neighbours = pd.DataFrame(illicit_neighbours.items(), columns=['Node', 'Illicit'])
-    df_features = pd.merge(df_features, df_illicit_neighbours[['Node', 'Illicit']], left_on=0, right_on='Node', how='left')
-    df_features['Illicit'] = df_features['Illicit'].fillna(0)
-
-    return df_features.drop('Node', axis=1)
+    return merge_data_frames(df_illicit_neighbours, df_features, 0, 'Node', 'Illicit')
 
 
-def insertAdditionalFeatures2(df_classes, df_edges, df_features):
+def insert_illicit_neighbours_separate_featuress(df_classes, df_edges, df_features):
     dict_classes = dict(zip(df_classes.txId, df_classes['class']))
     dict_edges = dict(zip(df_edges.txId1, df_edges.txId2))
 
@@ -50,16 +54,10 @@ def insertAdditionalFeatures2(df_classes, df_edges, df_features):
         source_illicit_neighbours[source_node] += 1
 
     df_dest_illicit_neighbours = pd.DataFrame(dest_illicit_neighbours.items(), columns=['Node', 'Dest Illicit'])
-    df_features = pd.merge(df_features, df_dest_illicit_neighbours[['Node', 'Dest Illicit']], left_on=0, right_on='Node', how='left')
-    df_features['Dest Illicit'] = df_features['Dest Illicit'].fillna(0)
-    df_features = df_features.drop('Node', axis=1)
+    df_features = merge_data_frames(df_dest_illicit_neighbours, df_features, 0, 'Node', 'Dest Illicit')
 
     df_source_illicit_neighbours = pd.DataFrame(source_illicit_neighbours.items(), columns=['Node', 'Source Illicit'])
-    df_features = pd.merge(df_features, df_source_illicit_neighbours[['Node', 'Source Illicit']], left_on=0, right_on='Node', how='left')
-    df_features['Source Illicit'] = df_features['Source Illicit'].fillna(0)
-    df_features = df_features.drop('Node', axis=1)
-
-    return df_features
+    return merge_data_frames(df_source_illicit_neighbours, df_features, 0, 'Node', 'Source Illicit')
 
 
 def import_elliptic_data_from_csvs():
@@ -67,7 +65,7 @@ def import_elliptic_data_from_csvs():
     df_edges = pd.read_csv(os.path.join(ROOT_DIR, 'reaml/data/elliptic/elliptic_txs_edgelist.csv'))
   
     df_features = pd.read_csv(os.path.join(ROOT_DIR, 'reaml/data/elliptic/elliptic_txs_features.csv'), header=None)
-    df_features = insertAdditionalFeatures2(df_classes, df_edges, df_features)
+    df_features = insert_illicit_neighbours_separate_featuress(df_classes, df_edges, df_features)
 
     return df_classes, df_edges, df_features
 
@@ -84,8 +82,8 @@ def rename_classes(df_classes):
     return df_classes
 
 
+# modify these values if you change the number of features
 def rename_features(df_features):
-    # TODO: modify values
     df_features.columns = ['id', 'time_step'] + [f'trans_feat_{i}' for i in range(93)] + [f'agg_feat_{i}' for i in
                                                                                           range(74)]
     return df_features
