@@ -1,3 +1,4 @@
 /src/reaml/data/
 /src/reaml/output/
 __pycache__
+*.ipynb
