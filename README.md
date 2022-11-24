@@ -1,7 +1,5 @@
-# Research-Anti-Money-Laundering-Bitcoin
+# Research-Anti-Money-Laundering-Bitcoin ```[IN DEVELOPMENT]```
 Supervised machine learning methods to detect money laundering using Bitcoin.
-
-[IN DEVELOPMENT]
 
 ## Results
 By adding only two new features to the each node in dataset I are using (the Elliptic Dataset), I managed to obtain the following preliminary results:
